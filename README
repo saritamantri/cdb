@@ -1,0 +1,19 @@
+Install Ubuntu 13.10
+
+Install Robotframework 2.8.7 
+	pip install robotframework
+
+Install Virtual Box 4.3 
+	sudo sh -c "echo 'deb http://download.virtualbox.org/virtualbox/debian '$(lsb_release -cs)' contrib non-free' > /etc/apt/sources.list.d/virtualbox.list" && wget -q http://download.virtualbox.org/virtualbox/debian/oracle_vbox.asc -O- | sudo apt-key add - && sudo apt-get update && sudo apt-get install virtualbox-4.3 dkms
+   
+	Create Virtual Machine 
+	Install Ubuntu 64bit OS
+ 	RAM 1024 MB
+        Hard drive file type - VirtualBox Disk Image( VDI )
+                               Dynamic Allocation
+                               File location & size 
+        Add Virtual SAS drive
+        Intsall Ubuntu 13.10
+
+Install Linux sg3-utils - The sg3_utils package contains utilities that send SCSI commands to devices
+Download & Build Package from "http://sg.danny.cz/sg/sg3_utils.html" 
