@@ -1,0 +1,3 @@
+All telecom, network companies are using  python test frameworks for protocol compliance testing. 
+In the area for storage solutions SCSI/SAS compliance testing presents unique challenges for framework design. The framework should accommodate deviations in command support, field support, response of the device under test to the command, variations in responses. This project work will prototype different architectures for device configuration and also prototype mapping of python data structures to SCSI/SAS specific formats. A test library is developed for Robot Framework.
+
