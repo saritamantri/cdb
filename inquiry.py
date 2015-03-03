@@ -27,18 +27,26 @@ typedef struct sg_io_hdr
     unsigned int info;          /* [o] auxiliary information */
 } sg_io_hdr_t;  /* around 64 bytes long (on i386) */
 """
+INQ_REPLY_LEN = 96
+INQ_CMD_CODE = 0x12
+INQ_CMD_LEN = 6
+SG_DXFER_NONE=-1,
+SG_DXFER_TO_DEV=-2,
+SG_DXFER_FROM_DEV=-3,
+SG_DXFER_TO_FROM_DEV=-4
+
 import pdb
-pdb.set_trace()
+
 class SgIoHdr(Structure):
-     _fields_ = [("interface_id",c_ubyte),
+     _fields_ = [("interface_id",c_int),
                  ("dxfer_direction",c_int),
 		 ("cmd_len",c_ubyte),
 		("mx_sb_len",c_ubyte),
 		("iovec_count", c_ushort),
 		("dxfer_len", c_uint),
-		#("dxferp",c_void_p),
-		("cmdp",c_char_p)]
-'''		("sbp",POINTER(c_char)),
+		("cmdp",c_void_p),
+		("dxferp",c_void_p),
+		("sbp",c_void_p),
 		("timeout",c_uint ),
 		("flags", c_uint),
 		("pack_id", c_int),
@@ -51,54 +59,39 @@ class SgIoHdr(Structure):
 		("driver_status", c_ushort),
 		("resid",c_int ),
 		("duration",c_uint ),
-		("info",c_uint)]'''
-
-
-diskname=(c_ubyte * 20)()
-INQ_REPLY_LEN = 96
-INQ_CMD_CODE = 0x12
-INQ_CMD_LEN = 6
-SG_DXFER_NONE=-1,
-SG_DXFER_TO_DEV=-2,
-SG_DXFER_FROM_DEV=-3,
-SG_DXFER_TO_FROM_DEV=-4
-
-#diskname = raw_input('Enter a disk name: ')
-diskname="/dev/sg2"
-inqCmdBlk = (c_ubyte * INQ_CMD_LEN)(INQ_CMD_CODE, 0, 0, 0, INQ_REPLY_LEN, 0)
-cmd=cast(inqCmdBlk,c_char_p)
-inqBuff = (c_ubyte * INQ_REPLY_LEN)
-
-
-sense_buffer = (c_ubyte * 32)()
-print type(sense_buffer)
-
-
-sg_fd=c_int()
-k=c_int()
-status=c_int()
+		("info",c_uint)]
 
 
 
-io_hdr=SgIoHdr(interface_id='S',
+inqCmdBlk = c_buffer(INQ_CMD_LEN)
+
+inqBuff = c_buffer(INQ_REPLY_LEN)
+
+sense_buffer = c_buffer(32)
+
+io_hdr=SgIoHdr(interface_id=ord('S'),
 	       cmd_len = sizeof(inqCmdBlk),
 	       iovec_count = 0,
     	       mx_sb_len = sizeof(sense_buffer),
     	       dxfer_direction = SG_DXFER_FROM_DEV,
     	       dxfer_len = INQ_REPLY_LEN,
-    	       #dxferp = inqBuff,
-   	       cmdp = cmd)
-'''    	       sbp = sense_buffer)
+    	       cmdp = cast(inqCmdBlk, c_void_p),
+   	       dxferp = cast(inqBuff, c_void_p),
+	       sbp = cast(sense_buffer, c_void_p),
     	       timeout = 20000,  
     	       flags = 0,
     	       pack_id = 0,
-    	       usr_ptr = None)'''
+    	       usr_ptr = None,
+	       status=0, 
+               masked_status=0,
+               msg_status=0, 
+               sb_len_wr=0, 
+               host_status=0, 
+               driver_status=0,
+               resid=0, 
+               duration=0, 
+               info=0)
 
-print io_hdr.interface_id
-
-import pdb
-#pdb.set_trace()
-print diskname
 
 '''
 libinquiry = cdll.LoadLibrary('./libinquiry.so.1.0')
