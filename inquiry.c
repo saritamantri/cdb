@@ -11,57 +11,41 @@
 #define INQ_CMD_LEN 6
 
 
-int  sg_inquiry(sg_io_hdr_t* io_hdr,unsigned char *diskname)
+sg_io_hdr_t*  sg_inquiry(sg_io_hdr_t* io_hdr)
     {
-	unsigned char inqCmdBlk[INQ_CMD_LEN] =
-                    {INQ_CMD_CODE, 0, 0, 0, INQ_REPLY_LEN, 0};
 	
-
-	unsigned char inqBuff[INQ_REPLY_LEN];
-	unsigned char sense_buffer[32];
 	int sg_fd, k,status;
-    	
-	printf("-----------------------------%s----------------------------------",diskname);
-	if ((sg_fd = open(diskname, O_RDONLY)) < 0) {
+	char * sd;
+    		
+	if ((sg_fd = open("/dev/sg2", O_RDONLY)) < 0) {
     	/* Note that most SCSI commands require the O_RDWR flag to be set */
         perror("error opening given file name");
-        return 1;
+        //return 1;
 	    }
 	    /* It is prudent to check we have a sg device by trying an ioctl */
 	if ((ioctl(sg_fd, SG_GET_VERSION_NUM, &k) < 0) || (k < 30000)) {
         printf("Not an sg device, or old sg driver\n");
-        return 1;
+        //return 1;
 	    }
 
 
-    	memset(io_hdr, 0, sizeof(sg_io_hdr_t));
-    	io_hdr->interface_id = 'S';
-    	io_hdr->cmd_len = sizeof(inqCmdBlk);
-    	/* io_hdr.iovec_count = 0; */  /* memset takes care of this */
-    	io_hdr->mx_sb_len = sizeof(sense_buffer);
-    	io_hdr->dxfer_direction = SG_DXFER_FROM_DEV;
-    	io_hdr->dxfer_len = INQ_REPLY_LEN;
-    	io_hdr->dxferp = inqBuff;
-    	io_hdr->cmdp = inqCmdBlk;
-    	io_hdr->sbp = sense_buffer;
-    	io_hdr->timeout = 20000;     /* 20000 millisecs == 20 seconds */
-    	/* io_hdr.flags = 0; */     /* take defaults: indirect IO, etc */
-    	/* io_hdr.pack_id = 0; */
-    	/* io_hdr.usr_ptr = NULL; */
-
-    	if (ioctl(sg_fd, SG_IO, &io_hdr) < 0) {
+    	
+ 	if (ioctl(sg_fd, SG_IO,io_hdr) < 0) {
         perror("Inquiry SG_IO ioctl error");
-        return 1;
+        //return 1;
     }
 
     /* now for the error processing */
     if ((io_hdr->info & SG_INFO_OK_MASK) != SG_INFO_OK) {
         if (io_hdr->sb_len_wr > 0) {
             printf("INQUIRY sense data: ");
+	    sd=(char *)(io_hdr->sbp);
             for (k = 0; k < io_hdr->sb_len_wr; ++k) {
                 if ((k > 0) && (0 == (k % 10)))
                     printf("\n  ");
-                printf("0x%02x ", sense_buffer[k]);
+                  printf("0x%02x ", sd[k]);
+
+	    
             }
             printf("\n");
         }
@@ -73,13 +57,13 @@ int  sg_inquiry(sg_io_hdr_t* io_hdr,unsigned char *diskname)
             printf("INQUIRY driver_status=0x%x\n", io_hdr->driver_status);
     }
     else {  /* assume INQUIRY response is present */
-        char * p = (char *)inqBuff;
+	char * p = (char *)io_hdr->dxferp;
         printf("Some of the INQUIRY command's response:\n");
-        printf("    %.8s  %.16s  %.4s\n", p + 8, p + 16, p + 32);
+	printf("    %s  %s  %s \n", p+8,p+16,p+32);
         printf("INQUIRY Timeout=%u millisecs, resid=%d\n",
                io_hdr->timeout, io_hdr->resid);
     }
     close(sg_fd);
-    return 0;
+    return io_hdr;
 }
 
