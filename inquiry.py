@@ -44,8 +44,8 @@ class SgIoHdr(Structure):
            ("mx_sb_len",c_ubyte),
 		("iovec_count", c_ushort),
 		("dxfer_len", c_uint),
-                ("cmdp",c_void_p),
-		("dxferp",c_void_p),
+                ("dxferp",c_void_p),
+		("cmdp",c_void_p),
 		("sbp",c_void_p),
 		("timeout",c_uint),
 		("flags", c_uint),
@@ -85,18 +85,21 @@ sg_inquiry=libinquiry.sg_inquiry
 sg_inquiry.argtypes = (POINTER(SgIoHdr),)
 sg_inquiry.restype = POINTER(SgIoHdr)
 
-p=sg_inquiry(byref(io_hdr))
+sg_inquiry(byref(io_hdr))
 
-
+print "-----------------------------"
+print "python output"
 print "Some of the INQUIRY command's response: "
-t=cast(p.contents.dxferp,POINTER(c_char))
-for i in range(96):
+
+t=cast(io_hdr.dxferp,POINTER(c_char))
+
+for i in range(8,32):
 	x=addressof(t.contents)+i
 	m=pointer(type(t.contents).from_address(x))
-	print m.contents
+	print m.contents.value,
 
-print "INQUIRY Timeout=",p.contents.timeout,"millisecs"
-print "resid=",p.contents.resid
+print "INQUIRY Duration=",io_hdr.duration,"millisecs"
+print "resid=",io_hdr.resid
 
 
 

@@ -29,12 +29,11 @@ sg_io_hdr_t*  sg_inquiry(sg_io_hdr_t* io_hdr)
 	    }
 
 
-    	
- 	if (ioctl(sg_fd, SG_IO,io_hdr) < 0) {
+    	if (ioctl(sg_fd, SG_IO,io_hdr) < 0) {
         perror("Inquiry SG_IO ioctl error");
         //return 1;
     }
-
+    
     /* now for the error processing */
     if ((io_hdr->info & SG_INFO_OK_MASK) != SG_INFO_OK) {
         if (io_hdr->sb_len_wr > 0) {
@@ -58,12 +57,13 @@ sg_io_hdr_t*  sg_inquiry(sg_io_hdr_t* io_hdr)
     }
     else {  /* assume INQUIRY response is present */
 	char * p = (char *)io_hdr->dxferp;
-        printf("Some of the INQUIRY command's response:\n");
-	printf("    %s  %s  %s \n", p+8,p+16,p+32);
-        printf("INQUIRY Timeout=%u millisecs, resid=%d\n",
-               io_hdr->timeout, io_hdr->resid);
+       printf("Some of the INQUIRY command's response:\n");
+       printf("%s\n",p+8);
+
+      printf("INQUIRY duration=%u millisecs, resid=%d\n",
+               io_hdr->duration, io_hdr->resid);
     }
     close(sg_fd);
-    return io_hdr;
+    
 }
 
