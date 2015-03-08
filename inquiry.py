@@ -97,61 +97,82 @@ t=cast(io_hdr.dxferp,POINTER(c_char))
 l=["PQual","Device_type","RMB","version","NormACA","HiSUP","Resp_data_format","SCCS","ACC","TPGS","3PC", "Protect","[BQue]","EncServ","MultiP","[MChngr]","[ACKREQQ]","Addr16","[RelAdr]","WBus16","Sync",  "Linked","[TranDis]","CmdQue","length","Peripheral device type","Vendor identification","Product identification","Product revision level"]
 
 
-def ptr_addr(ptr,offset):
-	x=addressof(ptr.contents)+offset
-	return pointer(type(ptr.contents).from_address(x))
+class Response:
 	
-m=ptr_addr(t,0)
-st=m.contents.value
-r=bin(ord(st))[2:].zfill(8) 
-print l[0],"=",r[5:],l[1],"=",r[0:5],
+	def __init__(self,dataformat):
+		self.dataformat=dataformat
 
-m=ptr_addr(t,1)
-st=m.contents.value
-r=bin(ord(st))[2:].zfill(8) 
-print l[2],"=",r[7:]
+	def ptr_addr(self,ptr,offset):
+		x=addressof(ptr.contents)+offset
+		return pointer(type(ptr.contents).from_address(x))
+	
+	def getPQual(self,ptr,offset):
+		m=self.ptr_addr(ptr,offset[1])
+		st=m.contents.value
+		r=bin(ord(st))[2:].zfill(8)
+		return r[dataformat["PQual"][1]:dataformat["PQual"][2]+1] 
 
-m=ptr_addr(t,2)
-st=m.contents.value 
-print l[3],"=",hex(ord(st))
+	def getDev_type(self,ptr,offset):
+		m=self.ptr_addr(ptr,offset[1])
+		st=m.contents.value
+		r=bin(ord(st))[2:].zfill(8)
+		return r[dataformat["Device_type"][1]:dataformat["Device_type"][2]+1] 
+
+	def getRMB(self,ptr,offset):
+		m=self.ptr_addr(ptr,offset[1])
+		st=m.contents.value
+		r=bin(ord(st))[2:].zfill(8)
+		return r[dataformat["RMB"][1]:dataformat["RMB"][2]+1] 
+
+	
+	def getVersion(self,ptr,offset):
+		m=self.ptr_addr(ptr,offset[1])
+		st=m.contents.value
+		r=hex(ord(st))
+		return r 
+
+	def getVendorId(self,ptr,offset):
+		r=""
+		for i in range(0,offset[0]):
+			m=self.ptr_addr(ptr,offset[1]+i)
+			r=r+m.contents.value
+		return r
+
+	def getProductId(self,ptr,offset):
+		r=""
+		for i in range(0,offset[0]):
+			m=self.ptr_addr(ptr,offset[1]+i)
+			r=r+m.contents.value
+		return r
+
+	def getProduct_rev(self,ptr,offset):
+		r=""
+		for i in range(0,offset[0]):
+			m=self.ptr_addr(ptr,offset[1]+i)
+			r=r+m.contents.value
+		return r
+
+
+
+dataformat={"PQual":[1,0,5,7],"Device_type":[1,0,0,4],"RMB":[1,7,7],"Version":[1,2],
+"Vendor_identification":[8,8,0,0],"Product_identification":[8,16,0,0],"Product_revision_level":[4,32,0,0]}
+
+res=Response(dataformat)
+
+print res.getPQual(t,dataformat["PQual"])
+print res.getDev_type(t,dataformat["Device_type"])
+print res.getRMB(t,dataformat["RMB"])
+print res.getVersion(t,dataformat["Version"])
+print res.getVendorId(t,dataformat["Vendor_identification"])
+print res.getProductId(t,dataformat["Product_identification"])
+print res.getProduct_rev(t,dataformat["Product_revision_level"])
 
 
 
 
 
-
-for i in range(0,7):
-	x=addressof(t.contents)+i
-	m=pointer(type(t.contents).from_address(x))
-	st=m.contents.value
-	r=bin(ord(st))[2:].zfill(8) 
-	print r,st,x,
-
-for i in range(8,15):
-	x=addressof(t.contents)+i
-	m=pointer(type(t.contents).from_address(x))
-	print m.contents.value,
-
-x=addressof(t.contents)+8
-m=pointer(type(t.contents).from_address(x))
-print m.contents.value,
-
-
-for i in range(16,31):
-	x=addressof(t.contents)+i
-	m=pointer(type(t.contents).from_address(x))
-	print m.contents.value,
-
-
-
-for i in range(32,35):
-	x=addressof(t.contents)+i
-	m=pointer(type(t.contents).from_address(x))
-	print m.contents.value,
-
-
-print "INQUIRY Duration=",io_hdr.duration,"millisecs"
-print "resid=",io_hdr.resid
+'''print "INQUIRY Duration=",io_hdr.duration,"millisecs"
+print "resid=",io_hdr.resid'''
 
 
 
