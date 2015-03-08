@@ -68,6 +68,7 @@ inqBuff = (c_ubyte * INQ_REPLY_LEN)()
 
 sense_buffer = (c_ubyte * 32)()
 
+
 io_hdr=SgIoHdr(interface_id=ord('S'),
                dxfer_direction = SG_DXFER_FROM_DEV,
                cmd_len = sizeof(inqCmdBlk),
@@ -83,9 +84,9 @@ libinquiry = cdll.LoadLibrary('./libinquiry.so.1.0')
 
 sg_inquiry=libinquiry.sg_inquiry
 sg_inquiry.argtypes = (POINTER(SgIoHdr),)
-sg_inquiry.restype = POINTER(SgIoHdr)
+sg_inquiry.restype = c_int
 
-sg_inquiry(byref(io_hdr))
+ret=sg_inquiry(byref(io_hdr))
 
 print "-----------------------------"
 print "python output"
@@ -93,10 +94,61 @@ print "Some of the INQUIRY command's response: "
 
 t=cast(io_hdr.dxferp,POINTER(c_char))
 
-for i in range(8,32):
+l=["PQual","Device_type","RMB","version","NormACA","HiSUP","Resp_data_format","SCCS","ACC","TPGS","3PC", "Protect","[BQue]","EncServ","MultiP","[MChngr]","[ACKREQQ]","Addr16","[RelAdr]","WBus16","Sync",  "Linked","[TranDis]","CmdQue","length","Peripheral device type","Vendor identification","Product identification","Product revision level"]
+
+
+def ptr_addr(ptr,offset):
+	x=addressof(ptr.contents)+offset
+	return pointer(type(ptr.contents).from_address(x))
+	
+m=ptr_addr(t,0)
+st=m.contents.value
+r=bin(ord(st))[2:].zfill(8) 
+print l[0],"=",r[5:],l[1],"=",r[0:5],
+
+m=ptr_addr(t,1)
+st=m.contents.value
+r=bin(ord(st))[2:].zfill(8) 
+print l[2],"=",r[7:]
+
+m=ptr_addr(t,2)
+st=m.contents.value 
+print l[3],"=",hex(ord(st))
+
+
+
+
+
+
+for i in range(0,7):
+	x=addressof(t.contents)+i
+	m=pointer(type(t.contents).from_address(x))
+	st=m.contents.value
+	r=bin(ord(st))[2:].zfill(8) 
+	print r,st,x,
+
+for i in range(8,15):
 	x=addressof(t.contents)+i
 	m=pointer(type(t.contents).from_address(x))
 	print m.contents.value,
+
+x=addressof(t.contents)+8
+m=pointer(type(t.contents).from_address(x))
+print m.contents.value,
+
+
+for i in range(16,31):
+	x=addressof(t.contents)+i
+	m=pointer(type(t.contents).from_address(x))
+	print m.contents.value,
+
+
+
+for i in range(32,35):
+	x=addressof(t.contents)+i
+	m=pointer(type(t.contents).from_address(x))
+	print m.contents.value,
+
 
 print "INQUIRY Duration=",io_hdr.duration,"millisecs"
 print "resid=",io_hdr.resid

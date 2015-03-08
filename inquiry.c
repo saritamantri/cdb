@@ -6,12 +6,8 @@
 #include <sys/ioctl.h>
 #include <scsi/sg.h> 
 
-#define INQ_REPLY_LEN 96
-#define INQ_CMD_CODE 0x12
-#define INQ_CMD_LEN 6
 
-
-sg_io_hdr_t*  sg_inquiry(sg_io_hdr_t* io_hdr)
+int sg_inquiry(sg_io_hdr_t* io_hdr)
     {
 	
 	int sg_fd, k,status;
@@ -20,18 +16,18 @@ sg_io_hdr_t*  sg_inquiry(sg_io_hdr_t* io_hdr)
 	if ((sg_fd = open("/dev/sg2", O_RDONLY)) < 0) {
     	/* Note that most SCSI commands require the O_RDWR flag to be set */
         perror("error opening given file name");
-        //return 1;
+        return 1;
 	    }
 	    /* It is prudent to check we have a sg device by trying an ioctl */
 	if ((ioctl(sg_fd, SG_GET_VERSION_NUM, &k) < 0) || (k < 30000)) {
         printf("Not an sg device, or old sg driver\n");
-        //return 1;
+        return 1;
 	    }
 
 
     	if (ioctl(sg_fd, SG_IO,io_hdr) < 0) {
         perror("Inquiry SG_IO ioctl error");
-        //return 1;
+        return 1;
     }
     
     /* now for the error processing */
@@ -58,12 +54,9 @@ sg_io_hdr_t*  sg_inquiry(sg_io_hdr_t* io_hdr)
     else {  /* assume INQUIRY response is present */
 	char * p = (char *)io_hdr->dxferp;
        printf("Some of the INQUIRY command's response:\n");
-       printf("%s\n",p+8);
-
-      printf("INQUIRY duration=%u millisecs, resid=%d\n",
-               io_hdr->duration, io_hdr->resid);
+     // printf("INQUIRY duration=%u millisecs, resid=%d\n",io_hdr->duration, io_hdr->resid);
     }
     close(sg_fd);
-    
+    return 0;
 }
 
