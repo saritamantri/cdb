@@ -106,66 +106,43 @@ class Response:
 		x=addressof(ptr.contents)+offset
 		return pointer(type(ptr.contents).from_address(x))
 	
-	def getPQual(self,ptr,offset):
-		m=self.ptr_addr(ptr,offset[1])
+	def getBitres(self,ptr,field):
+		m=self.ptr_addr(ptr,dataformat[field][1])
 		st=m.contents.value
 		r=bin(ord(st))[2:].zfill(8)
-		return r[dataformat["PQual"][1]:dataformat["PQual"][2]+1] 
+		return r[dataformat[field][1]:dataformat[field][2]+1] 
 
-	def getDev_type(self,ptr,offset):
-		m=self.ptr_addr(ptr,offset[1])
-		st=m.contents.value
-		r=bin(ord(st))[2:].zfill(8)
-		return r[dataformat["Device_type"][1]:dataformat["Device_type"][2]+1] 
-
-	def getRMB(self,ptr,offset):
-		m=self.ptr_addr(ptr,offset[1])
-		st=m.contents.value
-		r=bin(ord(st))[2:].zfill(8)
-		return r[dataformat["RMB"][1]:dataformat["RMB"][2]+1] 
-
-	
-	def getVersion(self,ptr,offset):
-		m=self.ptr_addr(ptr,offset[1])
+		
+		
+	def getVersion(self,ptr,field):
+		m=self.ptr_addr(ptr,dataformat[field][1])
 		st=m.contents.value
 		r=hex(ord(st))
 		return r 
 
-	def getVendorId(self,ptr,offset):
+	
+	def getRes(self,ptr,field):
 		r=""
-		for i in range(0,offset[0]):
-			m=self.ptr_addr(ptr,offset[1]+i)
-			r=r+m.contents.value
-		return r
-
-	def getProductId(self,ptr,offset):
-		r=""
-		for i in range(0,offset[0]):
-			m=self.ptr_addr(ptr,offset[1]+i)
-			r=r+m.contents.value
-		return r
-
-	def getProduct_rev(self,ptr,offset):
-		r=""
-		for i in range(0,offset[0]):
-			m=self.ptr_addr(ptr,offset[1]+i)
+		for i in range(0,dataformat[field][0]):
+			m=self.ptr_addr(ptr,dataformat[field][1]+i)
 			r=r+m.contents.value
 		return r
 
 
+	
 
 dataformat={"PQual":[1,0,5,7],"Device_type":[1,0,0,4],"RMB":[1,7,7],"Version":[1,2],
 "Vendor_identification":[8,8,0,0],"Product_identification":[8,16,0,0],"Product_revision_level":[4,32,0,0]}
 
 res=Response(dataformat)
 
-print res.getPQual(t,dataformat["PQual"])
-print res.getDev_type(t,dataformat["Device_type"])
-print res.getRMB(t,dataformat["RMB"])
-print res.getVersion(t,dataformat["Version"])
-print res.getVendorId(t,dataformat["Vendor_identification"])
-print res.getProductId(t,dataformat["Product_identification"])
-print res.getProduct_rev(t,dataformat["Product_revision_level"])
+print res.getBitres(t,"PQual")
+print res.getBitres(t,"Device_type")
+print res.getBitres(t,"RMB")
+print res.getVersion(t,"Version")
+print res.getRes(t,"Vendor_identification")
+print res.getRes(t,"Product_identification")
+print res.getRes(t,"Product_revision_level")
 
 
 
