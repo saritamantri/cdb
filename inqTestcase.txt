@@ -1,0 +1,12 @@
+*** Settings ***
+Library		/home/sarita/Desktop/controlflow/RobotFramework/cdbLibrary.py
+
+
+*** Test Cases ***
+inquiry
+	inquiry	 ${0x12}    ${0}	${0}	${0}	${96}	${0}	${-3}	${0}	${20000}
+	result should be	${None}  
+    			
+    
+    
+

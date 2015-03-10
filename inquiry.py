@@ -38,10 +38,10 @@ SG_DXFER_TO_FROM_DEV=-4
 import pdb
 
 class SgIoHdr(Structure):
-     _fields_ = [("interface_id",c_int),
-            ("dxfer_direction",c_int),
-	    ("cmd_len",c_ubyte),
-           ("mx_sb_len",c_ubyte),
+     _fields_ =[("interface_id",c_int),
+            	("dxfer_direction",c_int),
+	    	("cmd_len",c_ubyte),
+           	("mx_sb_len",c_ubyte),
 		("iovec_count", c_ushort),
 		("dxfer_len", c_uint),
                 ("dxferp",c_void_p),
@@ -61,38 +61,37 @@ class SgIoHdr(Structure):
 		("duration",c_uint ),
 		("info",c_uint)]
 
+class CDB:
 
-inqCmdBlk = (c_ubyte *INQ_CMD_LEN)(INQ_CMD_CODE, 0, 0, 0, INQ_REPLY_LEN, 0)
+	def __init__(self,opcode,CMDDT,EVDT,pagecode,reply_len,control,dxfer,count,to):
+		self.inqCmdBlk = (c_ubyte *INQ_CMD_LEN)(opcode, 0, 0, 0, reply_len, 0)
+		self.inqBuff = (c_ubyte * reply_len)()
+		self.sense_buffer = (c_ubyte * 32)()
 
-inqBuff = (c_ubyte * INQ_REPLY_LEN)()
+		self.io_hdr= SgIoHdr(interface_id=ord('S'),
+			dxfer_direction = dxfer,cmd_len = sizeof(self.inqCmdBlk),iovec_count = count,mx_sb_len = sizeof(self.sense_buffer),dxfer_len = reply_len,cmdp = cast(self.inqCmdBlk, c_void_p),dxferp = cast(self.inqBuff, c_void_p),sbp = cast(self.sense_buffer, c_void_p),timeout =to)  
 
-sense_buffer = (c_ubyte * 32)()
+
+	def loadlib(self,lib):
+		self.libinquiry = cdll.LoadLibrary(lib)
+		self.sg_inquiry=self.libinquiry.sg_inquiry
+		self.sg_inquiry.argtypes = (POINTER(SgIoHdr),)
+		self.sg_inquiry.restype = c_int
 
 
-io_hdr=SgIoHdr(interface_id=ord('S'),
-               dxfer_direction = SG_DXFER_FROM_DEV,
-               cmd_len = sizeof(inqCmdBlk),
-	       iovec_count = 0,
-    	       mx_sb_len = sizeof(sense_buffer),
-    	       dxfer_len = INQ_REPLY_LEN,
-               cmdp = cast(inqCmdBlk, c_void_p),
-	       dxferp = cast(inqBuff, c_void_p),
-	       sbp = cast(sense_buffer, c_void_p),
-    	       timeout = 20000)  
+	def call(self):
+		self.ret=self.sg_inquiry(byref(self.io_hdr))
+		
 
-libinquiry = cdll.LoadLibrary('./libinquiry.so.1.0')
+'''cdb=CDB(INQ_CMD_CODE,0,0,0,INQ_REPLY_LEN,0,SG_DXFER_FROM_DEV,0,20000)
+cdb.loadlib('./libinquiry.so.1.0')
+r=cdb.call()
+t=cast(cdb.io_hdr.dxferp,POINTER(c_char))
 
-sg_inquiry=libinquiry.sg_inquiry
-sg_inquiry.argtypes = (POINTER(SgIoHdr),)
-sg_inquiry.restype = c_int
-
-ret=sg_inquiry(byref(io_hdr))
 
 print "-----------------------------"
-print "python output"
-print "Some of the INQUIRY command's response: "
 
-t=cast(io_hdr.dxferp,POINTER(c_char))
+print "Some of the INQUIRY command's response: "
 
 l=["PQual","Device_type","RMB","version","NormACA","HiSUP","Resp_data_format","SCCS","ACC","TPGS","3PC", "Protect","[BQue]","EncServ","MultiP","[MChngr]","[ACKREQQ]","Addr16","[RelAdr]","WBus16","Sync",  "Linked","[TranDis]","CmdQue","length","Peripheral device type","Vendor identification","Product identification","Product revision level"]
 
@@ -106,46 +105,37 @@ class Response:
 		x=addressof(ptr.contents)+offset
 		return pointer(type(ptr.contents).from_address(x))
 	
-	def getBitres(self,ptr,field):
-		m=self.ptr_addr(ptr,dataformat[field][1])
-		st=m.contents.value
-		r=bin(ord(st))[2:].zfill(8)
-		return r[dataformat[field][1]:dataformat[field][2]+1] 
+	def getResponse(self,ptr,field):
+		if dataformat[field][4]=='b':
+			m=self.ptr_addr(ptr,dataformat[field][1])
+			st=m.contents.value
+			r=bin(ord(st))[2:].zfill(8)
+			return r[dataformat[field][1]:dataformat[field][2]+1] 
 
-		
-		
-	def getVersion(self,ptr,field):
-		m=self.ptr_addr(ptr,dataformat[field][1])
-		st=m.contents.value
-		r=hex(ord(st))
-		return r 
-
-	
-	def getRes(self,ptr,field):
-		r=""
-		for i in range(0,dataformat[field][0]):
-			m=self.ptr_addr(ptr,dataformat[field][1]+i)
-			r=r+m.contents.value
-		return r
+		elif dataformat[field][4]=='h':
+			m=self.ptr_addr(ptr,dataformat[field][1])
+			st=m.contents.value
+			r=hex(ord(st))
+			return r 
+		else:
+			r=""
+			for i in range(0,dataformat[field][0]):
+				m=self.ptr_addr(ptr,dataformat[field][1]+i)
+				r=r+m.contents.value
+			return r
 
 
-	
-
-dataformat={"PQual":[1,0,5,7],"Device_type":[1,0,0,4],"RMB":[1,7,7],"Version":[1,2],
-"Vendor_identification":[8,8,0,0],"Product_identification":[8,16,0,0],"Product_revision_level":[4,32,0,0]}
+dataformat={"PQual":[1,0,5,7,'b'],"Device_type":[1,0,0,4,'b'],"RMB":[1,1,7,7,'b'],"Version":[1,2,0,0,'h'],"Vendor_identification":[8,8,0,0,'s'],"Product_identification":[8,16,0,0,'s'],"Product_revision_level":[4,32,0,0,'s']}
 
 res=Response(dataformat)
 
-print res.getBitres(t,"PQual")
-print res.getBitres(t,"Device_type")
-print res.getBitres(t,"RMB")
-print res.getVersion(t,"Version")
-print res.getRes(t,"Vendor_identification")
-print res.getRes(t,"Product_identification")
-print res.getRes(t,"Product_revision_level")
-
-
-
+print res.getResponse(t,"PQual")
+print res.getResponse(t,"Device_type")
+print res.getResponse(t,"RMB")
+print res.getResponse(t,"Version")
+print res.getResponse(t,"Vendor_identification")
+print res.getResponse(t,"Product_identification")
+print res.getResponse(t,"Product_revision_level")'''
 
 
 '''print "INQUIRY Duration=",io_hdr.duration,"millisecs"
