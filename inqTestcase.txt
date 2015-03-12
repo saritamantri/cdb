@@ -3,13 +3,16 @@ Library		cdbLibrary.py
 
 
 *** Test Cases ***
-inquiry
-	inquiry	${0x12}    ${0}	${0}	${0}	${96}	${0}	${-3}	${0}	${20000}
-	result should be	${0}  
+valid inquiry
+	inquiry		opcode=${0x12}		CMDDT=${0}	EVDT=${0}	pagecode=${0}	allocationlen=${96}	control=${0}	dxfer=${-3}	ioveccount=${0}		timeout=${20000}
+	result should be	success=${0}  
     			
-inquiryPQual
-	${response}	inquiryPQual	PQual
-	binresponse should be	${response}	${000}
+valid inquiryPQual
+	${response}	inquiryPQual	field=PQual
+	binresponse should be	${response}	success=${000}
     
+invalid inquiry
+	inquiry		opcode=${0x13}		CMDDT=${0}	EVDT=${0}	pagecode=${0}	allocationlen=${96}	control=${0}	dxfer=${-3}	ioveccount=${0}		timeout=${20000}
+	result should be	success=${0}  
     
 

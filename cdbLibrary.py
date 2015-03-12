@@ -8,8 +8,8 @@ class cdbLibrary(object):
 
     dataformat={"PQual":[1,0,5,7,'b'],"Device_type":[1,0,0,4,'b'],"RMB":[1,1,7,7,'b'],"Version":[1,2,0,0,'h'],"Vendor_identification":[8,8,0,0,'s'],"Product_identification":[8,16,0,0,'s'],"Product_revision_level":[4,32,0,0,'s']}
 
-    def inquiry(self,opcode,CMDDT,EVDT,pagecode,reply_len,control,dxfer,count,to):
-	self._cdb = CDB(opcode,CMDDT,EVDT,pagecode,reply_len,control,dxfer,count,to)
+    def inquiry(self,opcode,CMDDT,EVDT,pagecode,allocationlen,control,dxfer,ioveccount,timeout):
+	self._cdb = CDB(opcode,CMDDT,EVDT,pagecode,allocationlen,control,dxfer,ioveccount,timeout)
         self._cdb.loadlib('./libinquiry.so.1.0')
 	self.result=self._cdb.call()
 
@@ -19,14 +19,14 @@ class cdbLibrary(object):
 	return res.getResponse(self.t,field)
 
 
-    def result_should_be(self, expected):
-	if self.result != expected:
-        	raise AssertionError('%s != %s' % (self.result, expected))
+    def result_should_be(self, success):
+	if self.result != success:
+        	raise AssertionError('%s != %s' % (self.result, success))
 
-    def binresponse_should_be(self,res,expected):
+    def binresponse_should_be(self,res,success):
 	res=int(res)
-	if res != expected:
-        	raise AssertionError('%s != %s' % (res, expected))
+	if res != success:
+        	raise AssertionError('%s != %s' % (res, success))
 
 
 '''c=cdbLibrary()

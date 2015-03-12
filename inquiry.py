@@ -125,16 +125,61 @@ class Response:
 			return r
 
 
-'''print res.getResponse(t,"Device_type")
-print res.getResponse(t,"RMB")
-print res.getResponse(t,"Version")
-print res.getResponse(t,"Vendor_identification")
-print res.getResponse(t,"Product_identification")
-print res.getResponse(t,"Product_revision_level")'''
+cdb = CDB(0x13,0,0,0,96,0,-3,0,20000)
+cdb.loadlib('./libinquiry.so.1.0')
+result=cdb.call()
+print result
+
+t=cast(cdb.io_hdr.sbp,POINTER(c_char))
+
+sensetype={0x70:"fixed format, current sense",0x71:"fixed format, previous sense",0x72:"descriptor format, current sense",0x73:"descriptor format, previous sense"}
+
+sensekey={0x0:"No sense",0x1:"Recovered Error ",0x2:"Not Ready",0x3:"Medium Error",0x4:"Hardware Error",0x5:"Illegal Request",0x6:"Unit Attention",0x7:"Data Protect ",0x9:"Blank Check",0xA:"Vendor Specific",0xB:"Copy Aborted",0xC:"Aborted Command",0xD:"Volume Overflow",0xE:""}
+
+ASC_ASCQ={(0x20,0x00):"Invalid Command Operation Code"}
+
+class Sensedata:
+	def __init__(self,sensetype,sensekey,ASC_ASCQ):
+		self.sensetype=sensetype
+		self.sensekey=sensekey
+		self.ASC_ASCQ=ASC_ASCQ
+	
+	def ptr_addr(self,ptr,offset):
+		x=addressof(ptr.contents)+offset
+		return pointer(type(ptr.contents).from_address(x))
+	
+	def getSensetype(self,ptr):
+		st=ptr.contents.value
+		r=bin(ord(st))[2:].zfill(8)		
+		s1=hex(int(r[1:],2))
+		for k,v in sensetype.items():
+			if s1==hex(k):
+				return v
+			
+	def getSensekey(self,ptr):
+		m=self.ptr_addr(ptr,2)
+		st=m.contents.value
+		r=bin(ord(st))[2:].zfill(8)		
+		s1=hex(int(r[5:],2))
+		for k,v in sensekey.items():
+			if s1==hex(k):
+				return v
 
 
+	def getASC_ASCQ(self,ptr):
+		m=self.ptr_addr(ptr,12)
+		st=m.contents.value
+		r=bin(ord(st))[2:].zfill(8)
+		s1=hex(int(r,2))
+		m=self.ptr_addr(ptr,13)
+		st=m.contents.value
+		r=bin(ord(st))[2:].zfill(8)		
+		s2=hex(int(r,2))
+		for k,v in ASC_ASCQ.items():
+			if s1==hex(k[0]) and s2==hex(k[1]):
+				return v
 
-
-
-
-
+s=Sensedata(sensetype,sensekey,ASC_ASCQ)
+print s.getSensetype(t)
+print s.getSensekey(t)
+print s.getASC_ASCQ(t)
