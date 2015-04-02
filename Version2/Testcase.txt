@@ -1,0 +1,11 @@
+*** Settings ***
+Library		cdbLibrary.py	
+
+
+*** Test Cases ***
+valid write6
+	write6		opcode=${0x0a}		lba=${0x00}  	t_length=${10}  	control=${0}
+	result should be	success=${0}  
+    			
+    
+
