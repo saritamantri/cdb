@@ -7,12 +7,13 @@
 #include <scsi/sg.h> 
 
 
-int sg_inquiry(sg_io_hdr_t* io_hdr)
+int sg_inquiry(sg_io_hdr_t* io_hdr,char *data)
     {
 	
-	int sg_fd, k,status;
-	char * sd;
-    		
+	int sg_fd, k,status,res;
+	char *sd;
+	io_hdr->dxferp=data;
+	
 	if ((sg_fd = open("/dev/sg2", O_RDONLY)) < 0) {
     	/* Note that most SCSI commands require the O_RDWR flag to be set */
         perror("error opening given file name");
@@ -25,10 +26,22 @@ int sg_inquiry(sg_io_hdr_t* io_hdr)
 	    }
 
 
-    	if (ioctl(sg_fd, SG_IO,io_hdr) < 0) {
+ 	if (ioctl(sg_fd, SG_IO,io_hdr) < 0) {
         perror("SG_IO ioctl error");
         return 1;
     }
+
+    /* while ((res = write(sg_fd, io_hdr, sizeof(*io_hdr))) < 0);
+     if (res < 0) {
+         perror("writing (wr) on sg device, error");
+         return -1;
+     }
+ 
+     while ((res = read(sg_fd, io_hdr, sizeof(*io_hdr))) < 0);
+     if (res < 0) {
+         perror("writing (rd) on sg device, error");
+         return -1;
+     }*/
     
     /* now for the error processing */
     if ((io_hdr->info & SG_INFO_OK_MASK) != SG_INFO_OK) {
@@ -54,9 +67,9 @@ int sg_inquiry(sg_io_hdr_t* io_hdr)
             printf("driver_status=0x%x\n", io_hdr->driver_status);
     }
     else {  /* assume INQUIRY response is present */
-	char * p = (char *)io_hdr->dxferp;
-       printf("command's response:\n");
-     printf("%s  %d\n",p,io_hdr->timeout);
+       char * p = (char *)io_hdr->dxferp;
+       //printf("command's response:\n");
+       //printf("%s--------%d\n",p,io_hdr->cmdp[0]);
     }
     close(sg_fd);
     return 0;

@@ -1,4 +1,4 @@
-from command1 import CDB, Response
+from command2 import CDB, Response
 from ctypes import *
 
 
@@ -29,23 +29,22 @@ class cdbLibrary(object):
         	raise AssertionError('%s != %s' % (res, success))
 
 
-    def write6(self,opcode,lba,t_length,control):
-	self._cdb=CDB(opcode,lba,t_length,control)
+    def write6(self,opcode,lba,t_length,control,data):
+	self._cdb=CDB(opcode=opcode,lba=lba,t_length=t_length,control=control,data=data)
 	self._cdb.loadlib('./libinquiry.so.1.0')
 	self.result=self._cdb.call()
 
 
     def read6(self,opcode,lba,t_length,control):
-	self._cdb=CDB(opcode,lba,t_length,control)
+	self._cdb=CDB(opcode=opcode,lba=lba,t_length=t_length,control=control)
 	self._cdb.loadlib('./libinquiry.so.1.0')
 	self.result=self._cdb.call()
 
-import pdb
-
+'''import pdb
+pdb.set_trace()
 c=cdbLibrary()
-c.write6('0x0a',0,5,0)
-print c.result
-c.read6('0x08',0,5,0)
+c.write6('0x0a',0,10,0,"hello")
+c.read6('0x08',0,10,0)'''
 
 
 
