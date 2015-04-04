@@ -64,33 +64,55 @@ class SgIoHdr(Structure):
 
 class CDB:
 		
-	def __init__(self,*args):
-		cdbformat={'0x0a':{'CMD_LEN':6,'REPLY_LEN':512,'DXFER':-2},
-		'0x12':{'CMD_LEN':6,'REPLY_LEN':96,'DXFER':-3},
-		'0x08':{'CMD_LEN':6,'REPLY_LEN':512,'DXFER':-3}}
-		print args
-		l=cdbformat[args[0]]['CMD_LEN']
-		r=cdbformat[args[0]]['REPLY_LEN']
-		dx=cdbformat[args[0]]['DXFER']
+	def __init__(self,**kwargs):
+		cdbformat={'0x0a':{'CMD_LEN':6,'REPLY_LEN':10,'DXFER':-2,'format':['lba','t_length','control'],'TR_LEN':1},
+		'0x12':{'CMD_LEN':6,'REPLY_LEN':96,'DXFER':-3,'TR_LEN':0},
+		'0x08':{'CMD_LEN':6,'REPLY_LEN':10,'DXFER':-3,'TR_LEN':1}}
+		i=1
+		l=cdbformat[kwargs['opcode']]['CMD_LEN']
+		r=cdbformat[kwargs['opcode']]['REPLY_LEN']
+		dx=cdbformat[kwargs['opcode']]['DXFER']
 		self.CmdBlk = (c_ubyte * l)()
-		self.CmdBlk[0]=int(args[0],16)
-		for i in range(1,len(args)):
-			self.CmdBlk[i]=args[i]
+		self.CmdBlk[0]=int(kwargs['opcode'],16)
 		self.Buff = (c_ubyte * r)()
-		self.Buff.value="good"
-		print self.Buff.value
-		self.sense_buffer = (c_ubyte * 32)()
+		self.sense_buffer = (c_ubyte * 32)()	
+		for l in cdbformat[kwargs['opcode']]['format']:
+			for k,v in kwargs.items():
+				if l==k:
+					self.CmdBlk[i]=v
+					print self.CmdBlk[i]
+					i=i+1
+		if dx==-2:
+			self.Buff.value=kwargs['data']
+		if cdbformat[kwargs['opcode']]['TR_LEN']==1:
+			tlen=kwargs['t_length']
+		else:
+			tlen=r			
+			
 
 		self.io_hdr= SgIoHdr(interface_id=ord('S'),
 				     dxfer_direction = dx,
 				     cmd_len = sizeof(self.CmdBlk),
 				     iovec_count = 0,
 				     mx_sb_len = sizeof(self.sense_buffer),
-				     dxfer_len = args[2],
+				     dxfer_len = tlen,
 				     cmdp = cast(self.CmdBlk, c_void_p),
 				     dxferp = cast(self.Buff, c_void_p),
                                      sbp = cast(self.sense_buffer, c_void_p),
-                                     timeout = 5000)  
+                                     timeout = 5000)
+
+		t=cast(self.io_hdr.dxferp,POINTER(c_char))
+		t1=cast(self.io_hdr.cmdp,POINTER(c_char))
+		print t,t1,hex(addressof(self.Buff)),self.Buff.value,t.contents
+		r=""
+		for i in range(0,12):
+				m=self.ptr_addr(t,i)
+				r=r+m.contents.value
+		print self.io_hdr.dxfer_len
+		  
+	def ptr_addr(self,ptr,offset):
+		x=addressof(ptr.contents)+offset
+		return pointer(type(ptr.contents).from_address(x))
 
 
 	def loadlib(self,lib):
