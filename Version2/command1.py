@@ -76,6 +76,9 @@ class CDB:
 		self.CmdBlk[0]=int(kwargs['opcode'],16)
 		self.Buff = (c_ubyte * r)()
 		self.sense_buffer = (c_ubyte * 32)()	
+		self.outdata=create_string_buffer(50)
+		self.ptrdata = c_char_p(addressof(self.outdata))
+
 		for l in cdbformat[kwargs['opcode']]['format']:
 			for k,v in kwargs.items():
 				if l==k:
@@ -83,13 +86,13 @@ class CDB:
 					i=i+1
 		if dx==-2:
 			self.Buff.value=kwargs['data']
-			self.data=kwargs['data']
+			self.indata=kwargs['data']
 		else:
-			self.data=""
+			self.indata=""
 		if cdbformat[kwargs['opcode']]['TR_LEN']==1:
-			tlen=kwargs['t_length']
+			self.tlen=kwargs['t_length']
 		else:
-			tlen=r			
+			self.tlen=r			
 			
 
 		self.io_hdr= SgIoHdr(interface_id=ord('S'),
@@ -97,7 +100,7 @@ class CDB:
 				     cmd_len = sizeof(self.CmdBlk),
 				     iovec_count = 0,
 				     mx_sb_len = sizeof(self.sense_buffer),
-				     dxfer_len = tlen,
+				     dxfer_len = self.tlen,
 				     cmdp = cast(self.CmdBlk, c_void_p),
 				     dxferp = cast(self.Buff, c_void_p),
                                      sbp = cast(self.sense_buffer, c_void_p),
@@ -106,13 +109,13 @@ class CDB:
 	def loadlib(self,lib):
 		self.libinquiry = cdll.LoadLibrary(lib)
 		self.sg_inquiry=self.libinquiry.sg_inquiry
-		self.sg_inquiry.argtypes = (POINTER(SgIoHdr),POINTER(c_char))
+		self.sg_inquiry.argtypes = (POINTER(SgIoHdr),POINTER(c_char),c_char_p,c_int)
 		self.sg_inquiry.restype = c_int
 
 
 	def call(self):
-		self.ret=self.sg_inquiry(byref(self.io_hdr),self.data)
-		return self.ret
+		self.ret=self.sg_inquiry(byref(self.io_hdr),self.indata,self.ptrdata,self.tlen)
+		return self.ret,self.ptrdata.value
 
 		
 

@@ -20,31 +20,40 @@ class cdbLibrary(object):
 
 
     def result_should_be(self, success):
-	if self.result != success:
-        	raise AssertionError('%s != %s' % (self.result, success))
+	if self.wrres[0] != success:
+        	raise AssertionError('%s != %s' % (self.wrres[0], success))
 
     def binresponse_should_be(self,res,success):
 	res=int(res)
 	if res != success:
         	raise AssertionError('%s != %s' % (res, success))
 
+    def data_should_be(self,res,success):
+	print res,success
+	if res[1] != success:
+        	raise AssertionError('%s != %s' % (res, success))
+
 
     def write6(self,opcode,lba,t_length,control,data):
 	self._cdb=CDB(opcode=opcode,lba=lba,t_length=t_length,control=control,data=data)
 	self._cdb.loadlib('./libinquiry.so.1.0')
-	self.result=self._cdb.call()
+	self.wrres=self._cdb.call()
 
 
     def read6(self,opcode,lba,t_length,control):
 	self._cdb=CDB(opcode=opcode,lba=lba,t_length=t_length,control=control)
 	self._cdb.loadlib('./libinquiry.so.1.0')
-	self.result=self._cdb.call()
+	self.readres,self.outdata=self._cdb.call()
+	return self.readres,self.outdata
 
-'''import pdb
-pdb.set_trace()
-c=cdbLibrary()
-c.write6('0x0a',0,10,0,"hello")
-c.read6('0x08',0,10,0)'''
+
+if __name__ == "__main__":
+	import pdb
+	#pdb.set_trace()
+	c=cdbLibrary()	
+	c.write6('0x0a',0,10,0,"hello")
+	a,b=c.read6('0x08',0,10,0)
+	print a,b
 
 
 

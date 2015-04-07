@@ -7,12 +7,12 @@
 #include <scsi/sg.h> 
 
 
-int sg_inquiry(sg_io_hdr_t* io_hdr,char *data)
+int sg_inquiry(sg_io_hdr_t* io_hdr,char *indata,char *outdata,int len)
     {
 	
 	int sg_fd, k,status,res;
 	char *sd;
-	io_hdr->dxferp=data;
+	io_hdr->dxferp=indata;
 	
 	if ((sg_fd = open("/dev/sg2", O_RDONLY)) < 0) {
     	/* Note that most SCSI commands require the O_RDWR flag to be set */
@@ -31,18 +31,7 @@ int sg_inquiry(sg_io_hdr_t* io_hdr,char *data)
         return 1;
     }
 
-    /* while ((res = write(sg_fd, io_hdr, sizeof(*io_hdr))) < 0);
-     if (res < 0) {
-         perror("writing (wr) on sg device, error");
-         return -1;
-     }
- 
-     while ((res = read(sg_fd, io_hdr, sizeof(*io_hdr))) < 0);
-     if (res < 0) {
-         perror("writing (rd) on sg device, error");
-         return -1;
-     }*/
-    
+        
     /* now for the error processing */
     if ((io_hdr->info & SG_INFO_OK_MASK) != SG_INFO_OK) {
         if (io_hdr->sb_len_wr > 0) {
@@ -68,8 +57,9 @@ int sg_inquiry(sg_io_hdr_t* io_hdr,char *data)
     }
     else {  /* assume INQUIRY response is present */
        char * p = (char *)io_hdr->dxferp;
+       strcpy(outdata,p);
        //printf("command's response:\n");
-       //printf("%s--------%d\n",p,io_hdr->cmdp[0]);
+       //printf("%s-----%s-----%d\n",p,outdata,io_hdr->cmdp[0]);
     }
     close(sg_fd);
     return 0;

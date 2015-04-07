@@ -7,14 +7,26 @@ Library		cdbLibrary.py
 *** Test Cases ***
 	
 valid write6
-	write6		opcode=0x0a		lba=${0}  	t_length=${0}  	control=${0}	data=hello
+	write6		opcode=0x0a	lba=${0}  	t_length=${0}  	control=${0}	data=hello
 	result should be	success=${0}
- 
 
+valid write6 with transfer length 10
+	write6		opcode=0x0a	lba=${0}  	t_length=${10}  	control=${0}	data=hello
+	result should be	success=${0}
+
+valid write6 with transfer length MAX
+	write6		opcode=0x0a	lba=${0}  	t_length=${MAX}  	control=${0}	data=hello
+	result should be	success=${0}
+
+
+valid write6 with lba MAX
+	write6		opcode=0x0a	lba=${MAX}  	t_length=${0}  	control=${0}	data=hello
+	result should be	success=${0}
+
+valid write6 Read6
 	write6		opcode=0x0a	lba=${0}  	t_length=${10}	control=${0}	data=hello
-	result should be	success=${0}   
+	${response}	read6		opcode=0x08	lba=${0}  	t_length=${10}	control=${0}	
+	data should be	${response}	success=hello   
 
-	
-    			
-    
+
 
