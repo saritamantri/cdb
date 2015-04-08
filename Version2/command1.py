@@ -1,4 +1,5 @@
 from ctypes import *
+from collections import Counter
 """
 typedef struct sg_io_hdr
 {
@@ -65,10 +66,9 @@ class SgIoHdr(Structure):
 class CDB:
 		
 	def __init__(self,**kwargs):
-		cdbformat={'0x0a':{'CMD_LEN':6,'REPLY_LEN':512,'DXFER':-2,'format':['lba','t_length','control'],'TR_LEN':1},
-		'0x12':{'CMD_LEN':6,'REPLY_LEN':96,'DXFER':-3,'TR_LEN':0},
-		'0x08':{'CMD_LEN':6,'REPLY_LEN':512,'DXFER':-3,'format':['lba','t_length','control'],'TR_LEN':1}}
-		i=1
+		cdbformat={'0x0a':{'CMD_LEN':6,'REPLY_LEN':512,'DXFER':-2,'format':[('lba',3,1,0,0),('t_length',1,4,0,7),('control',1,5,0,7)],'TR_LEN':1,'timeout':5000},'0x12':{'CMD_LEN':6,'REPLY_LEN':96,'DXFER':-3,'TR_LEN':0,'timeout':20000,'format':[('CMDDT',1,1,1,4),('EVDT',1,1,0,0),('pagecode',1,2,0,7),('alloclen',2,3,0,0),('control',1,5,0,7),('EV1',1,4,4,7)]},
+		'0x08':{'CMD_LEN':6,'REPLY_LEN':512,'DXFER':-3,'format':[('lba',3,1,0,0),('t_length',1,4,0,7),('control',1,5,0,7)],'TR_LEN':1,'timeout':5000}}
+		
 		l=cdbformat[kwargs['opcode']]['CMD_LEN']
 		r=cdbformat[kwargs['opcode']]['REPLY_LEN']
 		dx=cdbformat[kwargs['opcode']]['DXFER']
@@ -78,12 +78,67 @@ class CDB:
 		self.sense_buffer = (c_ubyte * 32)()	
 		self.outdata=create_string_buffer(50)
 		self.ptrdata = c_char_p(addressof(self.outdata))
-
+	
 		for l in cdbformat[kwargs['opcode']]['format']:
 			for k,v in kwargs.items():
-				if l==k:
-					self.CmdBlk[i]=v
-					i=i+1
+				if l[0]==k:
+					if l[1]>1 or (l[1]==1 and l[3]==0 and l[4]==7):
+						i=l[2]
+						self.CmdBlk[i]=v
+						print i,self.CmdBlk[i]
+					
+					if l[1]==1 and l[3]==l[4]:
+						i=l[2]
+						self.CmdBlk[i]=kwargs[l[0]]
+
+					if if l[1]==1 and l[3]!=l[4]:
+						
+
+		x= cdbformat[kwargs['opcode']]['format']	
+    		count = Counter((i[2]) for i in x)
+    		out = [i for i in x if count[(i[2])] > 1]
+		d={}
+		for i in out:
+			bit=[0,0,0,0,0,0,0,0]
+			for j in out:
+				if i[2]==j[2] and i[0]!=j[0]:
+					if i[2] in d.keys():
+						break
+					else:
+						d[i[2]]=bit
+						if i[3]==i[4]:
+							bit[i[3]]=kwargs[i[0]]
+							
+						else:
+							s1=bin(kwargs[i[0]])[2:]
+							num1=[int(s1[m],2) for m in range(0,len(s1))]
+							m=0
+							for k in range(i[3],i[4]+1):
+								bit[k]=num1[m]
+								m=m+1
+							
+				 							
+						if j[3]==j[4]:
+							bit[j[3]]=kwargs[j[0]]
+							
+						else:
+							s2=bin(kwargs[j[0]])[2:]
+							num2=[int(s2[m],2) for m in range(0,len(s2))]
+							m=0
+							for k in range(j[3],j[4]+1):
+								bit[k]=num2[m]
+								m=m+1
+							
+									
+		
+		
+		
+		
+		for k in d.keys():
+			print d[k]	
+
+				
+			
 		if dx==-2:
 			self.Buff.value=kwargs['data']
 			self.indata=kwargs['data']
@@ -104,7 +159,7 @@ class CDB:
 				     cmdp = cast(self.CmdBlk, c_void_p),
 				     dxferp = cast(self.Buff, c_void_p),
                                      sbp = cast(self.sense_buffer, c_void_p),
-                                     timeout = 5000)
+                                     timeout = cdbformat[kwargs['opcode']]['timeout'])
 
 	def loadlib(self,lib):
 		self.libinquiry = cdll.LoadLibrary(lib)

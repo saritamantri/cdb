@@ -8,8 +8,8 @@ class cdbLibrary(object):
 
     dataformat={"PQual":[1,0,5,7,'b'],"Device_type":[1,0,0,4,'b'],"RMB":[1,1,7,7,'b'],"Version":[1,2,0,0,'h'],"Vendor_identification":[8,8,0,0,'s'],"Product_identification":[8,16,0,0,'s'],"Product_revision_level":[4,32,0,0,'s'],"Page_code":[1,1,0,0,'h']}
 
-    def inquiry(self,opcode,CMDDT,EVDT,pagecode,allocationlen,control,dxfer,ioveccount,timeout):
-	self._cdb = CDB(opcode,CMDDT,EVDT,pagecode,allocationlen,control,dxfer,ioveccount,timeout)
+    def inquiry(self,opcode,CMDDT,EVDT,pagecode,alloclen,control,EV1):
+	self._cdb=CDB(opcode=opcode,CMDDT=CMDDT,EVDT=EVDT,pagecode=pagecode,alloclen=alloclen,control=control,EV1=EV1)      
         self._cdb.loadlib('./libinquiry.so.1.0')
 	self.result=self._cdb.call()
 
@@ -53,15 +53,14 @@ if __name__ == "__main__":
 	c=cdbLibrary()	
 	c.write6('0x0a',0,10,0,"hello")
 	a,b=c.read6('0x08',0,10,0)
-	print a,b
+	c.inquiry('0x12',8,0,0,96,0,1)
+	'''print c.result, type(c.result)
+	l=c.inquiryPQual("PQual")
+	print l,type(l),type(0)
+	c.result_should_be(0)'''
 
 
 
 
-'''c=cdbLibrary()
-c.inquiry(0x12,0,0,0,96,0,-3,0,20000)
-print c.result, type(c.result)
-l=c.inquiryPQual("PQual")
-print l,type(l),type(0)
-c.result_should_be(0)'''
+
 
