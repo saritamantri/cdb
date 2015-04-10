@@ -66,7 +66,7 @@ class SgIoHdr(Structure):
 class CDB:
 		
 	def __init__(self,**kwargs):
-		cdbformat={'0x0a':{'CMD_LEN':6,'REPLY_LEN':512,'DXFER':-2,'format':[('lba',3,1,0,0),('t_length',1,4,0,7),('control',1,5,0,7)],'TR_LEN':1,'timeout':5000},'0x12':{'CMD_LEN':6,'REPLY_LEN':96,'DXFER':-3,'TR_LEN':0,'timeout':20000,'format':[('CMDDT',1,1,1,4),('EVDT',1,1,0,0),('pagecode',1,2,0,7),('alloclen',2,3,0,0),('control',1,5,0,7),('EV1',1,4,4,7)]},
+		cdbformat={'0x0a':{'CMD_LEN':6,'REPLY_LEN':512,'DXFER':-2,'format':[('lba',3,1,0,0),('t_length',1,4,0,7),('control',1,5,0,7)],'TR_LEN':1,'timeout':5000},'0x12':{'CMD_LEN':6,'REPLY_LEN':96,'DXFER':-3,'TR_LEN':0,'timeout':20000,'format':[('CMDDT',1,1,1,1),('EVDT',1,1,0,0),('pagecode',1,2,0,7),('alloclen',2,3,0,0),('control',1,5,0,7)]},
 		'0x08':{'CMD_LEN':6,'REPLY_LEN':512,'DXFER':-3,'format':[('lba',3,1,0,0),('t_length',1,4,0,7),('control',1,5,0,7)],'TR_LEN':1,'timeout':5000}}
 		
 		l=cdbformat[kwargs['opcode']]['CMD_LEN']
@@ -85,15 +85,18 @@ class CDB:
 					if l[1]>1 or (l[1]==1 and l[3]==0 and l[4]==7):
 						i=l[2]
 						self.CmdBlk[i]=v
-						print i,self.CmdBlk[i]
+						
 					
-					if l[1]==1 and l[3]==l[4]:
+					elif l[1]==1 and l[3]==l[4]:
 						i=l[2]
 						self.CmdBlk[i]=kwargs[l[0]]
-
-					if if l[1]==1 and l[3]!=l[4]:
 						
 
+					elif l[1]==1 and l[3]!=0 or l[4]!=7:
+						i=l[2]
+						self.CmdBlk[i]=kwargs[l[0]]
+						
+					
 		x= cdbformat[kwargs['opcode']]['format']	
     		count = Counter((i[2]) for i in x)
     		out = [i for i in x if count[(i[2])] > 1]
@@ -129,14 +132,16 @@ class CDB:
 								bit[k]=num2[m]
 								m=m+1
 							
-									
-		
-		
-		
 		
 		for k in d.keys():
-			print d[k]	
-
+			d[k].reverse()
+			s=""
+			for m in range(0,len(d[k])):
+				s=s+str(d[k][m])
+			self.CmdBlk[k]= int(s,2)
+			
+		for k in range(6):
+			print self.CmdBlk[k]
 				
 			
 		if dx==-2:

@@ -53,7 +53,7 @@ if __name__ == "__main__":
 	c=cdbLibrary()	
 	c.write6('0x0a',0,10,0,"hello")
 	a,b=c.read6('0x08',0,10,0)
-	c.inquiry('0x12',8,0,0,96,0,1)
+	c.inquiry('0x12',0,1,0,96,0,1)
 	'''print c.result, type(c.result)
 	l=c.inquiryPQual("PQual")
 	print l,type(l),type(0)
