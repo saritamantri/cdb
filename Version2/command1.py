@@ -139,11 +139,7 @@ class CDB:
 			for m in range(0,len(d[k])):
 				s=s+str(d[k][m])
 			self.CmdBlk[k]= int(s,2)
-			
-		for k in range(6):
-			print self.CmdBlk[k]
 				
-			
 		if dx==-2:
 			self.Buff.value=kwargs['data']
 			self.indata=kwargs['data']
@@ -451,3 +447,14 @@ class Sensedata:
 print s.getSensetype(t)
 print s.getSensekey(t)
 print s.getASC_ASCQ(t)'''
+
+if __name__ == "__main__":
+	import pdb
+	#pdb.set_trace()
+	c=CDB(opcode='0x0a',lba=0,t_length=10,control=0,data="hello")
+	c.loadlib('./libinquiry.so.1.0')
+	c.call()
+
+
+
+
