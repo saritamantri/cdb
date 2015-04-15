@@ -4,12 +4,16 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/ioctl.h>
-#include <scsi/sg.h> 
+#include <scsi/sg.h>
+#include <glib.h> 
+
+
+
 int user_ioctl(int , int ,sg_io_hdr_t* io_hdr);
 
 int sg_inquiry(sg_io_hdr_t* io_hdr,char *indata,char *outdata,int len)
     {
-	
+	printf("...................");
 	int sg_fd, k,status,res,val;
 	char *sd;
 	io_hdr->dxferp=indata;
@@ -70,41 +74,59 @@ int sg_inquiry(sg_io_hdr_t* io_hdr,char *indata,char *outdata,int len)
     return val;
 }
 
-void write6(sg_io_hdr_t* io_hdr);
-void inquiry(sg_io_hdr_t* io_hdr);
-void read6(sg_io_hdr_t* io_hdr);
+void dowrite6(sg_io_hdr_t* io_hdr);
+void doinquiry(sg_io_hdr_t* io_hdr);
+void doread6(sg_io_hdr_t* io_hdr);
 
-typedef struct {
-    void (*ophandler) (sg_io_hdr_t* io_hdr);
-    char *op;
-} opcode;
+void (*write6)(sg_io_hdr_t* io_hdr)=dowrite6;
+void (*inquiry)(sg_io_hdr_t* io_hdr)=doinquiry;
+void (*read6)(sg_io_hdr_t* io_hdr)=doread6;
 
-opcode opcodetable[] = {
-    {write6, "0x0a"},
-    {inquiry, "0x12"},
-    {read6, "0x08"} }
 
-void write6(sg_io_hdr_t *io_hdr)
+void doinquiry(sg_io_hdr_t *io_hdr)
+{
+	printf("----inquiry---");
+}
+
+void doread6(sg_io_hdr_t *io_hdr)
+{
+	printf("read6");
+}
+
+void dowrite6(sg_io_hdr_t *io_hdr)
 {
 
-	lba_max=getlbamax()
+	/*lba_max=getlbamax()
 	lba_min=getlbamin()
-	trlen_max=gettrlen()
-
-
-
+	trlen_max=gettrlen()*/
+	printf("write");
 }
 
 int user_ioctl(int sg_fd, int sg_io,sg_io_hdr_t* io_hdr)
 {
+char snum[3];
+char *key1,*key2,*key3,*op;
+void (*value)(sg_io_hdr_t* io_hdr);
 
-	
+GHashTable* ophash = g_hash_table_new(g_direct_hash, g_direct_equal);
+
+key1 = strdup( "10" );
+key2 = strdup( "12" );
+key3 = strdup( "08" );
+g_hash_table_insert(ophash,key1,write6);
+g_hash_table_insert(ophash,key2,inquiry);
+g_hash_table_insert(ophash,key3,read6);
 
 
+snprintf (snum, sizeof(snum), "%d",io_hdr->cmdp[0]);
+op=strdup(snum);
+printf("%s %s",key1,snum);
 
+value=g_hash_table_lookup(ophash, op);
+//value(io_hdr);
 
+	return 0;
 
-	
 }
 
 
