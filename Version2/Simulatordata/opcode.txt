@@ -1,0 +1,3 @@
+0x0a	write6_cdb	write6_response	
+0x12	inquiry_cdb	inquiry_response
+0x08	read6_cdb	read6_response

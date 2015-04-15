@@ -73,28 +73,74 @@ int sg_inquiry(sg_io_hdr_t* io_hdr,char *indata,char *outdata,int len)
 int user_ioctl(int sg_fd, int sg_io,sg_io_hdr_t* io_hdr)
 {
 
-	char Buff[256];
-	printf("command's response:\n");
-	switch(io_hdr->cmdp[0])
-	{
-
-		case 0x0a: printf("%d\n",io_hdr->cmdp[0]);
-			   if(io_hdr->cmdp[1]+io_hdr->cmdp[2]<=2097664)
-			   		io_hdr->status=0;
-			   else
-					io_hdr->status=2;
-			   
-
-		default: printf("Invalid opcode\n");
-	}
+	FILE *opfile,*cdbfile,*resfile;
 	
-	io_hdr->status=0;
+  	char *inname = "Simulatordata/opcode.txt";
+	char name[50];
+	char opcode[10];
+ 	char cdb[20];
+	char res[20];
+ 	char line[100];
+	char linec[100];
+	char cmd[16][30];
+	int n,j,k=0,l;
+  	int i = 0;
+
+
+  	opfile = fopen(inname, "r");
+	printf("---------\n");
+	
+  	if (!opfile) {
+    		printf("Couldn't open %s for reading\n",inname);
+    	return -1;
+  	}
+	while(i < 40 && fgets(line, sizeof(line), opfile) != NULL){
+        	sscanf(line, "%s\t%s\t%s", opcode,cdb,res);
+		n = (int)strtol(opcode, NULL, 0);
+		printf("%d  %d\n",n,io_hdr->cmdp[0]);
+		if(n==(io_hdr->cmdp[0])){
+			strcpy(name,"Simulatordata/cdb/");
+			strcat(name,cdb);
+			strcat(name,".txt");
+			
+			cdbfile = fopen(name, "r");
 				
-	
+  			if (!cdbfile) {
+    				printf("Couldn't open %s for reading\n",cdb);
+    				return -1;
+  			}
+			while(fgets(linec, sizeof(linec), cdbfile) != NULL){
+				for (i = 0,j=0; i < sizeof(linec); i++) 
+				{ 
+							
+					if (linec[i] == '\t') {
+						cmd[k][j] = '\0';
+						j=0;
+						k++;
+						
+							
+					} 
+					else { cmd[k][j] = linec[i];
+						j++; 
+						 } 
+				}
+				printf("\n");
+				for(l=0;l<k;l++)
+					printf("%s ",cmd[l]);
+				k=0;
+				
+		}
+		}
+		
+		else{
+			printf("Invalid opcode\n");
+		
+		}
+        	i++;
+    	}
+				
+	return 0;
 }
-
-
-
 
 
 
